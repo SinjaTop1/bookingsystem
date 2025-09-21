@@ -543,11 +543,13 @@ class AppointmentBooking {
             
             // Create combined datetime in Zapier format
             const appointmentDateTime = this.createAppointmentDateTime(this.selectedDate, this.selectedTime);
+            const appointmentEndDateTime = this.createAppointmentEndDateTime(this.selectedDate, this.selectedTime, this.selectedService.duration);
             
             const bookingData = {
                 // Appointment Details
                 service: this.selectedService,
                 datetime: appointmentDateTime, // Combined date and time in Zapier format
+                enddate: appointmentEndDateTime, // End datetime in Zapier format
                 date: this.formatDateLocal(this.selectedDate), // Keep separate date for backward compatibility
                 time: this.selectedTime,
                 duration: this.selectedService.duration,
@@ -621,6 +623,7 @@ class AppointmentBooking {
                     formData.append('service_duration', bookingData.service.duration);
                     formData.append('service_price', bookingData.service.price);
                     formData.append('datetime', bookingData.datetime); // Combined datetime in Zapier format
+                    formData.append('enddate', bookingData.enddate); // End datetime in Zapier format
                     formData.append('date', bookingData.date);
                     formData.append('time', bookingData.time);
                     formData.append('customer_firstName', bookingData.customer.firstName);
@@ -740,6 +743,40 @@ class AppointmentBooking {
         
         // Get timezone offset
         const timezoneOffset = appointmentDate.getTimezoneOffset();
+        const offsetHours = Math.abs(Math.floor(timezoneOffset / 60));
+        const offsetMinutes = Math.abs(timezoneOffset % 60);
+        const offsetSign = timezoneOffset <= 0 ? '+' : '-';
+        const timezone = `${offsetSign}${String(offsetHours).padStart(2, '0')}${String(offsetMinutes).padStart(2, '0')}`;
+        
+        return `${dayName} ${monthName} ${day} ${hours}:${minutes}:${seconds} ${timezone} ${year}`;
+    }
+    
+    createAppointmentEndDateTime(date, timeString, durationMinutes) {
+        // Create end datetime by adding duration to start datetime
+        const timeParts = this.parseTimeString(timeString);
+        
+        // Create appointment start date
+        const appointmentDate = new Date(date);
+        appointmentDate.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+        
+        // Add duration to get end time
+        const endDate = new Date(appointmentDate.getTime() + (durationMinutes * 60 * 1000));
+        
+        // Format in Zapier's expected format
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        const dayName = dayNames[endDate.getDay()];
+        const monthName = monthNames[endDate.getMonth()];
+        const day = String(endDate.getDate()).padStart(2, '0');
+        const hours = String(endDate.getHours()).padStart(2, '0');
+        const minutes = String(endDate.getMinutes()).padStart(2, '0');
+        const seconds = '00';
+        const year = endDate.getFullYear();
+        
+        // Get timezone offset
+        const timezoneOffset = endDate.getTimezoneOffset();
         const offsetHours = Math.abs(Math.floor(timezoneOffset / 60));
         const offsetMinutes = Math.abs(timezoneOffset % 60);
         const offsetSign = timezoneOffset <= 0 ? '+' : '-';
