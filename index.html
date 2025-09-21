@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="clinic-title">VetCare Appointments</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="clinic-branding">
+                <div class="clinic-logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 4C22.2091 4 24 5.79086 24 8V12H28C30.2091 12 32 13.7909 32 16V32C32 34.2091 30.2091 36 28 36H12C9.79086 36 8 34.2091 8 32V16C8 13.7909 9.79086 12 12 12H16V8C16 5.79086 17.7909 4 20 4Z" fill="#4F46E5"/>
+                        <path d="M18 20H22V24H26V28H22V32H18V28H14V24H18V20Z" fill="white"/>
+                    </svg>
+                </div>
+                <div class="clinic-info">
+                    <h1 id="clinic-name">VetCare Clinic</h1>
+                    <p id="clinic-subtitle">Book your pet's appointment</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="booking-container">
+            <div class="booking-steps">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <span>Select Service</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <span>Choose Date & Time</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <span>Your Information</span>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <span>Confirmation</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Service Selection -->
+            <div class="booking-step" id="step-1">
+                <h2>Select a Service</h2>
+                <div class="services-grid" id="services-list">
+                    <!-- Services will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Step 2: Date & Time Selection -->
+            <div class="booking-step hidden" id="step-2">
+                <h2>Choose Date & Time</h2>
+                <div class="datetime-container">
+                    <div class="calendar-section">
+                        <div class="calendar-header">
+                            <button id="prev-month" class="calendar-nav">&lt;</button>
+                            <h3 id="calendar-month-year"></h3>
+                            <button id="next-month" class="calendar-nav">&gt;</button>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid">
+                            <!-- Calendar will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="time-slots-section">
+                        <h3 id="selected-date-display">Select a date</h3>
+                        <div class="time-slots" id="time-slots">
+                            <!-- Time slots will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Customer Information -->
+            <div class="booking-step hidden" id="step-3">
+                <h2>Your Information</h2>
+                <form class="booking-form" id="booking-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first-name">First Name *</label>
+                            <input type="text" id="first-name" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name">Last Name *</label>
+                            <input type="text" id="last-name" name="lastName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-name">Pet Name *</label>
+                        <input type="text" id="pet-name" name="petName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pet-type">Pet Type *</label>
+                            <select id="pet-type" name="petType" required>
+                                <option value="">Select pet type</option>
+                                <option value="dog">Dog</option>
+                                <option value="cat">Cat</option>
+                                <option value="bird">Bird</option>
+                                <option value="rabbit">Rabbit</option>
+                                <option value="reptile">Reptile</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pet-breed">Breed (Optional)</label>
+                            <input type="text" id="pet-breed" name="petBreed">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Additional Notes (Optional)</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Any special instructions or concerns about your pet..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 4: Confirmation -->
+            <div class="booking-step hidden" id="step-4">
+                <div class="confirmation-content">
+                    <div class="success-icon">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="40" cy="40" r="40" fill="#10B981"/>
+                            <path d="M25 40L35 50L55 30" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2>Appointment Confirmed!</h2>
+                    <div class="confirmation-details" id="confirmation-details">
+                        <!-- Confirmation details will be populated by JavaScript -->
+                    </div>
+                    <p class="confirmation-note">
+                        You will receive a confirmation email shortly. If you need to reschedule or cancel, 
+                        please contact us at least 24 hours in advance.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="navigation-buttons">
+                <button id="back-btn" class="btn btn-secondary hidden">Back</button>
+                <button id="next-btn" class="btn btn-primary">Next</button>
+                <button id="book-btn" class="btn btn-primary hidden" type="submit">Book Appointment</button>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay hidden" id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Processing your appointment...</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
