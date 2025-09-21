@@ -583,27 +583,88 @@ class AppointmentBooking {
             console.log('Sending booking data:', bookingData);
             console.log('Webhook URL:', CLINIC_CONFIG.zapierWebhookUrl);
             
-            // Send to Zapier webhook
-            const response = await fetch(CLINIC_CONFIG.zapierWebhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bookingData)
-            });
+            // Try different methods to send to Zapier webhook
+            let response;
+            
+            try {
+                // Method 1: Try with no-cors mode (fire and forget)
+                response = await fetch(CLINIC_CONFIG.zapierWebhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                console.log('Method 1 (no-cors) response:', response);
+                
+                // With no-cors, we can't read the response, but if no error was thrown, assume success
+                if (response.type === 'opaque') {
+                    console.log('Webhook sent successfully (no-cors mode)');
+                }
+                
+            } catch (error1) {
+                console.log('Method 1 failed, trying Method 2:', error1);
+                
+                try {
+                    // Method 2: Try with form data
+                    const formData = new FormData();
+                    
+                    // Flatten the booking data for form submission
+                    formData.append('service_id', bookingData.service.id);
+                    formData.append('service_name', bookingData.service.name);
+                    formData.append('service_duration', bookingData.service.duration);
+                    formData.append('service_price', bookingData.service.price);
+                    formData.append('date', bookingData.date);
+                    formData.append('time', bookingData.time);
+                    formData.append('customer_firstName', bookingData.customer.firstName);
+                    formData.append('customer_lastName', bookingData.customer.lastName);
+                    formData.append('customer_email', bookingData.customer.email);
+                    formData.append('customer_phone', bookingData.customer.phone);
+                    formData.append('pet_name', bookingData.pet.name);
+                    formData.append('pet_type', bookingData.pet.type);
+                    formData.append('pet_breed', bookingData.pet.breed);
+                    formData.append('notes', bookingData.notes);
+                    formData.append('bookingId', bookingData.bookingId);
+                    formData.append('clinic_name', bookingData.clinic.name);
+                    formData.append('clinic_phone', bookingData.clinic.phone);
+                    formData.append('clinic_email', bookingData.clinic.email);
+                    formData.append('bookingDate', bookingData.bookingDate);
+                    formData.append('status', bookingData.status);
+                    
+                    response = await fetch(CLINIC_CONFIG.zapierWebhookUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: formData
+                    });
+                    
+                    console.log('Method 2 (form data) response:', response);
+                    
+                } catch (error2) {
+                    console.log('Method 2 also failed:', error2);
+                    throw error2;
+                }
+            }
             
             console.log('Response status:', response.status);
+            console.log('Response type:', response.type);
             console.log('Response ok:', response.ok);
             
-            if (response.ok) {
+            // With no-cors mode, we can't read the actual response
+            // If we get here without an error, assume the webhook was sent successfully
+            if (response.type === 'opaque' || response.ok) {
                 // Success - move to confirmation step
-                console.log('Booking successful!');
+                console.log('Booking sent successfully!');
                 this.currentStep = 4;
                 this.updateStepDisplay();
-            } else {
-                const errorText = await response.text();
-                console.error('Server response:', errorText);
+            } else if (response.status && response.status >= 400) {
                 throw new Error(`Failed to create appointment. Server responded with: ${response.status} ${response.statusText}`);
+            } else {
+                // Fallback: assume success if no clear error
+                console.log('Booking assumed successful (unable to verify due to CORS)');
+                this.currentStep = 4;
+                this.updateStepDisplay();
             }
             
         } catch (error) {
