@@ -144,6 +144,31 @@ const CLINIC_CONFIG = {
         allowMultiplePets: false, // Allow booking for multiple pets
         sendSMSReminders: false, // Enable SMS reminders via Zapier
         collectInsuranceInfo: false // Collect pet insurance information
+    },
+    
+    // Real-Time Availability Configuration
+    realTimeAvailability: {
+        enabled: false, // Set to true to enable real-time availability checking
+        method: 'googleSheets', // Options: 'googleSheets', 'googleCalendar'
+        
+        // Google Sheets Configuration
+        googleSheetsId: '', // Your Google Sheets ID (from the URL)
+        
+        // Google Calendar Configuration  
+        googleCalendarId: '', // Your Google Calendar ID
+        
+        // API Configuration
+        apiKey: '', // Your Google API Key
+        
+        // Cache Settings
+        cacheTimeout: 300000, // 5 minutes in milliseconds
+        
+        // Instructions for setup:
+        // 1. Enable Google Sheets API or Google Calendar API in Google Cloud Console
+        // 2. Create an API key with appropriate restrictions
+        // 3. Make your Google Sheet public (view only) or set proper calendar permissions
+        // 4. Copy the Sheet ID or Calendar ID from the URLs
+        // 5. Set enabled: true and configure the appropriate method
     }
 };
 

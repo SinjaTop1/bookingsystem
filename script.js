@@ -9,6 +9,12 @@ class AppointmentBooking {
         this.currentMonth = new Date().getMonth();
         this.currentYear = new Date().getFullYear();
         
+        // Initialize availability checker if configured
+        this.availabilityChecker = null;
+        if (CLINIC_CONFIG.realTimeAvailability && CLINIC_CONFIG.realTimeAvailability.enabled) {
+            this.availabilityChecker = new AvailabilityChecker(CLINIC_CONFIG.realTimeAvailability);
+        }
+        
         this.init();
     }
     
@@ -187,9 +193,9 @@ class AppointmentBooking {
         this.updateNextButton();
     }
     
-    generateTimeSlots(date) {
+    async generateTimeSlots(date) {
         const timeSlotsContainer = document.getElementById('time-slots');
-        timeSlotsContainer.innerHTML = '';
+        timeSlotsContainer.innerHTML = '<p>Loading available times...</p>';
         
         const dayName = this.getDayName(date.getDay()).toLowerCase();
         const businessHours = CLINIC_CONFIG.businessHours[dayName];
@@ -199,6 +205,47 @@ class AppointmentBooking {
             return;
         }
         
+        // Load real-time availability if configured
+        let availableSlots = [];
+        if (this.availabilityChecker) {
+            try {
+                await this.loadRealTimeAvailability();
+                availableSlots = this.availabilityChecker.getAvailableSlots(
+                    date, 
+                    businessHours, 
+                    CLINIC_CONFIG.appointmentSettings.slotDuration,
+                    CLINIC_CONFIG.appointmentSettings.bufferTime
+                );
+            } catch (error) {
+                console.error('Error loading real-time availability:', error);
+                // Fallback to static availability
+                availableSlots = this.generateStaticTimeSlots(date, businessHours);
+            }
+        } else {
+            // Use static availability (original behavior)
+            availableSlots = this.generateStaticTimeSlots(date, businessHours);
+        }
+        
+        // Clear loading message
+        timeSlotsContainer.innerHTML = '';
+        
+        if (availableSlots.length === 0) {
+            timeSlotsContainer.innerHTML = '<p>No available appointments on this day.</p>';
+            return;
+        }
+        
+        // Create time slot elements
+        availableSlots.forEach(timeString => {
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = timeString;
+            timeSlot.addEventListener('click', () => this.selectTimeSlot(timeString, timeSlot));
+            timeSlotsContainer.appendChild(timeSlot);
+        });
+    }
+    
+    generateStaticTimeSlots(date, businessHours) {
+        const availableSlots = [];
         const startTime = this.parseTime(businessHours.start);
         const endTime = this.parseTime(businessHours.end);
         const slotDuration = CLINIC_CONFIG.appointmentSettings.slotDuration;
@@ -210,15 +257,26 @@ class AppointmentBooking {
             const timeString = this.formatTime(currentTime);
             
             if (this.isTimeSlotAvailable(date, currentTime)) {
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = timeString;
-                timeSlot.addEventListener('click', () => this.selectTimeSlot(timeString, timeSlot));
-                timeSlotsContainer.appendChild(timeSlot);
+                availableSlots.push(timeString);
             }
             
             // Move to next time slot
             currentTime = new Date(currentTime.getTime() + (slotDuration + bufferTime) * 60000);
+        }
+        
+        return availableSlots;
+    }
+    
+    async loadRealTimeAvailability() {
+        const config = CLINIC_CONFIG.realTimeAvailability;
+        
+        if (config.method === 'googleSheets') {
+            await this.availabilityChecker.checkAvailabilityFromSheets(
+                config.googleSheetsId,
+                config.apiKey
+            );
+        } else if (config.method === 'googleCalendar') {
+            // Calendar method loads per-date, handled in generateTimeSlots
         }
     }
     
