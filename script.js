@@ -541,10 +541,14 @@ class AppointmentBooking {
         try {
             const formData = new FormData(document.getElementById('booking-form'));
             
+            // Create combined datetime in Zapier format
+            const appointmentDateTime = this.createAppointmentDateTime(this.selectedDate, this.selectedTime);
+            
             const bookingData = {
                 // Appointment Details
                 service: this.selectedService,
-                date: this.formatDate(this.selectedDate),
+                datetime: appointmentDateTime, // Combined date and time in Zapier format
+                date: this.formatDateLocal(this.selectedDate), // Keep separate date for backward compatibility
                 time: this.selectedTime,
                 duration: this.selectedService.duration,
                 
@@ -616,6 +620,7 @@ class AppointmentBooking {
                     formData.append('service_name', bookingData.service.name);
                     formData.append('service_duration', bookingData.service.duration);
                     formData.append('service_price', bookingData.service.price);
+                    formData.append('datetime', bookingData.datetime); // Combined datetime in Zapier format
                     formData.append('date', bookingData.date);
                     formData.append('time', bookingData.time);
                     formData.append('customer_firstName', bookingData.customer.firstName);
@@ -699,6 +704,72 @@ class AppointmentBooking {
     // Utility functions
     formatDate(date) {
         return date.toISOString().split('T')[0];
+    }
+    
+    formatDateLocal(date) {
+        // Format date in local timezone to avoid UTC conversion issues
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    createAppointmentDateTime(date, timeString) {
+        // Create a combined datetime in Zapier's expected format
+        // Format: "ddd MMM DD HH:mm:ss Z YYYY" (e.g., "Sun Jan 22 23:04:05 +0000 2006")
+        
+        // Parse the time string (e.g., "2:00 PM" or "14:00")
+        const timeParts = this.parseTimeString(timeString);
+        
+        // Create new date object with the selected date and time
+        const appointmentDate = new Date(date);
+        appointmentDate.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+        
+        // Format in Zapier's expected format
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        const dayName = dayNames[appointmentDate.getDay()];
+        const monthName = monthNames[appointmentDate.getMonth()];
+        const day = String(appointmentDate.getDate()).padStart(2, '0');
+        const hours = String(appointmentDate.getHours()).padStart(2, '0');
+        const minutes = String(appointmentDate.getMinutes()).padStart(2, '0');
+        const seconds = '00';
+        const year = appointmentDate.getFullYear();
+        
+        // Get timezone offset
+        const timezoneOffset = appointmentDate.getTimezoneOffset();
+        const offsetHours = Math.abs(Math.floor(timezoneOffset / 60));
+        const offsetMinutes = Math.abs(timezoneOffset % 60);
+        const offsetSign = timezoneOffset <= 0 ? '+' : '-';
+        const timezone = `${offsetSign}${String(offsetHours).padStart(2, '0')}${String(offsetMinutes).padStart(2, '0')}`;
+        
+        return `${dayName} ${monthName} ${day} ${hours}:${minutes}:${seconds} ${timezone} ${year}`;
+    }
+    
+    parseTimeString(timeString) {
+        // Parse time strings like "2:00 PM", "14:00", etc.
+        const timeStr = timeString.trim();
+        
+        if (timeStr.includes('AM') || timeStr.includes('PM')) {
+            // 12-hour format
+            const [time, period] = timeStr.split(/\s+/);
+            const [hours, minutes] = time.split(':').map(Number);
+            
+            let hour24 = hours;
+            if (period.toUpperCase() === 'PM' && hours !== 12) {
+                hour24 += 12;
+            } else if (period.toUpperCase() === 'AM' && hours === 12) {
+                hour24 = 0;
+            }
+            
+            return { hours: hour24, minutes: minutes || 0 };
+        } else {
+            // 24-hour format
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return { hours: hours, minutes: minutes || 0 };
+        }
     }
     
     formatTime(date) {
